@@ -341,11 +341,11 @@ public class FormPenghitungUmur extends javax.swing.JFrame {
     // Tombol RESET
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
     jDateChooser1.setDate(null); // kosongkan tanggal
-    jLabel3.setText("");          // hapus label tanggal dipilih
-    jTextField1.setText("");      // kosongkan umur (tahun)
-    jTextField2.setText("");      // kosongkan umur (bulan)
-    jTextField3.setText("");      // kosongkan umur (hari)
-    jLabel5.setText("");          // hapus info ulang tahun berikutnya
+    jLabel3.setText("Hasil");          // hapus label tanggal dipilih
+    jTextField1.setText("Tahun");      // kosongkan umur (tahun)
+    jTextField2.setText("Bulan");      // kosongkan umur (bulan)
+    jTextField3.setText("Hari");      // kosongkan umur (hari)
+    jLabel5.setText("Ulang tahun berikutnya");          // hapus info ulang tahun berikutnya
     jTextArea1.setText("");       // kosongkan hasil dari API
 
     JOptionPane.showMessageDialog(this, "Form berhasil direset!");    // TODO add your handling code here:
