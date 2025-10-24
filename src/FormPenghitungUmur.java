@@ -255,6 +255,12 @@ public class FormPenghitungUmur extends javax.swing.JFrame {
         // Konversi ke LocalDate
         LocalDate tglLahir = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         LocalDate today = LocalDate.now();
+        
+        if (tglLahir.isAfter(today)) {
+            JOptionPane.showMessageDialog(this, "Tanggal lahir tidak boleh di masa depan!");
+            return;
+        }
+
 
         // Hitung umur
         Period umur = Period.between(tglLahir, today);
@@ -269,27 +275,40 @@ public class FormPenghitungUmur extends javax.swing.JFrame {
         }
 
         Period sisa = Period.between(today, nextBirthday);
-        jLabel5.setText("Ulang tahun berikutnya: " 
-                + nextBirthday + " (" 
-                + sisa.getMonths() + " bulan " 
-                + sisa.getDays() + " hari lagi)");
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMMM yyyy");
+        String tanggalFormatted = sdf.format(java.sql.Date.valueOf(nextBirthday));
+        
+        jLabel5.setText(String.format(
+                "Ulang tahun berikutnya: %s (%d bulan %d hari lagi)",
+                tanggalFormatted, sisa.getMonths(), sisa.getDays()
+        ));
+
 
         // === Bagian API Eksternal ===
         int bulan = tglLahir.getMonthValue();
         int hari = tglLahir.getDayOfMonth();
 
         String apiUrl = "https://byabbe.se/on-this-day/" + bulan + "/" + hari + "/events.json";
+        jTextArea1.setText("Mengambil data peristiwa penting... Mohon tunggu...");
         URL url = new URL(apiUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
+        conn.setConnectTimeout(5000); // Maks 5 detik tunggu koneksi
+        conn.setReadTimeout(5000);    // Maks 5 detik tunggu data
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        StringBuilder response = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            response.append(line);
+int status = conn.getResponseCode();
+if (status != 200) {
+    throw new IOException("Server mengembalikan kode: " + status);
+}
+
+        StringBuilder response;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+            response = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
         }
-        reader.close();
 
         // Parsing JSON menggunakan org.json.simple
         JSONParser parser = new JSONParser();
@@ -300,7 +319,8 @@ public class FormPenghitungUmur extends javax.swing.JFrame {
         StringBuilder hasil = new StringBuilder("📜 Peristiwa penting pada tanggal lahirmu:\n");
         for (int i = 0; i < Math.min(5, events.size()); i++) {
             JSONObject event = (JSONObject) events.get(i);
-            String year = (String) event.get("year");
+            Object yearObj = event.get("year");
+            String year = yearObj != null ? yearObj.toString() : "Tidak diketahui";
             String desc = (String) event.get("description"); // langsung ambil string
             hasil.append("- ").append(year).append(": ").append(desc).append("\n");
         }
@@ -309,14 +329,13 @@ public class FormPenghitungUmur extends javax.swing.JFrame {
         jTextArea1.setText(hasil.toString());
 
     } catch (IOException e) {
-        JOptionPane.showMessageDialog(this, "Gagal mengambil data dari API!");
-        e.printStackTrace();
+        logger.log(java.util.logging.Level.WARNING, "Koneksi API gagal", e);
+        JOptionPane.showMessageDialog(this, "Tidak dapat terhubung ke server API. Periksa koneksi internet Anda.");
     } catch (ParseException e) {
-        JOptionPane.showMessageDialog(this, "Gagal memproses data dari API!");
-        e.printStackTrace();
-    } catch (Exception e) {
+        logger.log(java.util.logging.Level.WARNING, "Parsing JSON gagal", e);
+        JOptionPane.showMessageDialog(this, "Format data dari API tidak dikenali.");
+    } catch (HeadlessException e) {
         JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + e.getMessage());
-        e.printStackTrace();
     }  
     }//GEN-LAST:event_jButton1ActionPerformed
 
